@@ -1,18 +1,44 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Login from '../components/Login.vue'
+import Login from '../components/Login.vue';
+import Home from '../components/Home.vue';
 
-Vue.use(VueRouter)
-
-
+Vue.use(VueRouter);
 
 const router = new VueRouter({
     mode: 'history',
     base: process.env.BASE_URL,
-    routes: [{
-        path: '/login',
-        component: Login
-    }]
-})
+    routes: [
+        // 路由重定向
+        {
+            path: "/",
+            redirect: "/login"
+        },
+        // 登录的路由
+        {
+            path: '/login',
+            component: Login
+        },
+        {
+            path: '/home',
+            component: Home
+        }
+    ]
+});
 
-export default router
+// 使用导航守卫，对访问的路由进行拦截处理
+// to：要访问的路径，from：从哪里来，next：下一个要做的操作
+router.beforeEach((to, from, next) => {
+    // 如果访问的使login路由，则直接进行下一步
+    if (to.path === '/login') {
+        return next();
+    }
+    // 如果访问的是其他路由，则需要判断token令牌是否存在，如果不存在则导航到login界面
+    if (!window.sessionStorage.getItem('token')) {
+        return next('/login');
+    }
+    // token存在则继续执行
+    next();
+});
+
+export default router;
