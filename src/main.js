@@ -6,6 +6,8 @@ import store from './store'
 import './plugins/element.js'
 // 导入全局样式
 import './assets/global.css';
+// 导入字体图标的样式
+import './assets/font/iconfont.css';
 // 导入axios
 import axios from 'axios';
 

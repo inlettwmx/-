@@ -1,0 +1,44 @@
+{
+  "id": "2458036",
+  "name": "华联超市",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "12107338",
+      "name": "订单管理",
+      "font_class": "dingdan",
+      "unicode": "e64c",
+      "unicode_decimal": 58956
+    },
+    {
+      "icon_id": "20451862",
+      "name": "buy-Fill",
+      "font_class": "buy-Fill",
+      "unicode": "e8d1",
+      "unicode_decimal": 59601
+    },
+    {
+      "icon_id": "20451863",
+      "name": "calendar-Fill",
+      "font_class": "calendar-Fill",
+      "unicode": "e8d2",
+      "unicode_decimal": 59602
+    },
+    {
+      "icon_id": "20452031",
+      "name": "distribution-Fill",
+      "font_class": "distribution-Fill",
+      "unicode": "e8e8",
+      "unicode_decimal": 59624
+    },
+    {
+      "icon_id": "20452051",
+      "name": "user-group-Fill",
+      "font_class": "user-group-Fill",
+      "unicode": "e8ed",
+      "unicode_decimal": 59629
+    }
+  ]
+}
