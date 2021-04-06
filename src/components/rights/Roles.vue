@@ -3,8 +3,8 @@
     <!-- 导航区域 -->
     <el-breadcrumb separator-class="el-icon-arrow-right">
       <el-breadcrumb-item :to="{ path: '/home/welcome' }">首页</el-breadcrumb-item>
+      <el-breadcrumb-item :to="{path:'/home/rights'}">权限列表</el-breadcrumb-item>
       <el-breadcrumb-item>角色列表</el-breadcrumb-item>
-      <el-breadcrumb-item>权限列表</el-breadcrumb-item>
     </el-breadcrumb>
 
     <el-card>
@@ -49,7 +49,8 @@
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column type="index"></el-table-column>
+        <el-table-column type="index"
+                         align="center"></el-table-column>
         <el-table-column label="角色名称"
                          prop="roleName"
                          width="350px">
