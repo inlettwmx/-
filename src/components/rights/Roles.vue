@@ -22,7 +22,8 @@
                     v-for="(item1,index1) in scope.row.children"
                     :key="item1.id">
               <el-col :span="5">
-                <el-tag>
+                <el-tag closable
+                        @close="removeRightByid(scope.row,item1.id)">
                   {{item1.authName}}
                 </el-tag>
                 <i class="el-icon-caret-right"></i>
@@ -32,7 +33,9 @@
                         v-for="(item2,index2) in item1.children"
                         :key="item2.id">
                   <el-col :span="5">
-                    <el-tag type="success">
+                    <el-tag type="success"
+                            closable
+                            @close="removeRightByid(scope.row,item2.id)">
                       {{item2.authName}}
                     </el-tag>
                     <i class="el-icon-caret-right"></i>
@@ -40,7 +43,9 @@
                   <el-col :span="20">
                     <el-tag type="danger"
                             v-for="item3 in item2.children"
-                            :key="item3.id">
+                            :key="item3.id"
+                            closable
+                            @close="removeRightByid(scope.row,item3.id)">
                       {{item3.authName}}
                     </el-tag>
                   </el-col>
@@ -60,7 +65,7 @@
                          width="350px">
         </el-table-column>
         <el-table-column label="权限管理">
-          <template>
+          <template v-slot="scope">
             <el-tooltip class="item"
                         :enterable="false"
                         effect="dark"
@@ -70,7 +75,6 @@
                          type="primary"
                          icon="el-icon-edit"></el-button>
             </el-tooltip>
-
             <el-tooltip class="item"
                         :enterable="false"
                         effect="dark"
@@ -80,7 +84,6 @@
                          type="danger"
                          icon="el-icon-delete"></el-button>
             </el-tooltip>
-
             <el-tooltip class="item"
                         :enterable="false"
                         effect="dark"
@@ -88,12 +91,38 @@
                         placement="top-start">
               <el-button size="mini"
                          type="warning"
+                         @click="showSetRightDialog(scope.row)"
                          icon="el-icon-setting"></el-button>
             </el-tooltip>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- dialog对话框 -->
+    <el-dialog title="分配权限"
+               :visible.sync="dialogBoxVisible"
+               v-model="dialogBoxVisible"
+               width="30%"
+               @close="defaultKeys=[]">
+      <!-- 树形空间 -->
+      <el-tree :data="rightList"
+               show-checkbox
+               default-expand-all
+               :default-checked-keys="defaultKeys"
+               node-key="id"
+               ref="treeRef"
+               highlight-current
+               :props="defaultProps">
+      </el-tree>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogBoxVisible = false">取 消</el-button>
+          <el-button type="primary"
+                     @click="handleAddRights">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -103,7 +132,20 @@ export default {
   data () {
     return {
       // 角色列表数据
-      roleList: []
+      roleList: [],
+      // 权限列表
+      rightList: [],
+      // dialog对话框是否出现的属性 
+      dialogBoxVisible: false,
+      // 树形结构展示的默认属性
+      defaultProps: {
+        children: 'children',
+        label: 'authName'
+      },
+      // 树形结构默认被选中的key数组
+      defaultKeys: [],
+      // 每一次操作的角色id
+      roleID: null
     }
   },
   // 实例创建完之后立即调用的钩子函数
@@ -112,7 +154,7 @@ export default {
     this.getRoleList();
   },
   methods: {
-    // 获取角色列表的函数
+    // 【获取角色列表】事件处理函数
     async getRoleList () {
       // 向服务器发起请求，并使用解构获取服务器响应的数据
       const { data: res } = await this.$http.get("roles");
@@ -120,6 +162,62 @@ export default {
       if (res.meta.status !== 200) return this.$message.error("获取角色列表失败：" + res.meta.msg);
       // 成功后赋值给roleList属性
       this.roleList = res.data;
+    },
+    // 【根据ID移除对应角色的权限】事件处理函数,并接收角色和权限俩个参数
+    async removeRightByid (role, rightsID) {
+      // 调用提示对话框，并获取点击的结果
+      const confirmResult = await this.$confirm("此操作将移除该角色所有用户的该权限，是否继续？", "提示", {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).catch(err => err);
+      // 如果是取消,则结束，并提示用户
+      if (confirmResult !== "confirm") return this.$message.info("已取消操作！");
+      // 否则就是移除权限,那么就像服务器发起请求，并获取服务器响应的结果
+      const { data: res } = await this.$http.delete(`roles/${role.id}/rights/${rightsID}`);
+      // 如果服务器响应的状态码不为200，则移除失败
+      if (res.meta.status !== 200) return this.$message.error("移除权限失败：" + res.meta.msg);
+      // 移除成功后，更新这一行数据的子节点
+      role.children = res.data;
+      // 并提示成功
+      this.$message.success(res.meta.msg);
+    },
+    // 【权限对话框打开】事件处理函数
+    async showSetRightDialog (role) {
+      // 获取要修改数据的id
+      this.roleID = role.id;
+      // 向服务器发起请求，并使用结构语法获取服务器响应的数据
+      const { data: res } = await this.$http.get("rights/tree");
+      // 如果服务器响应的状态码不为200，则获取数据失败
+      if (res.meta.status !== 200) return this.$message.error("权限列表获取失败：" + res.meta.msg);
+      // 成功后赋值给rightList属性
+      this.rightList = res.data;
+      // 打开dialogshu'xing对话框
+      this.dialogBoxVisible = true;
+      // 调用给defaultKeys属性添加元素的事件处理函数
+      this.getDefaultKeys(role, this.defaultKeys);
+    },
+    // 【Dialog对话框点击确定按钮后】的事件处理函数
+    async handleAddRights () {
+      // 通过结构语法将refs获取树形结构中选中和被选中节点的key（id）值组成数组，并用，分割数字组成字符串
+      const keys = [...this.$refs.treeRef.getCheckedKeys(), ...this.$refs.treeRef.getHalfCheckedKeys()].join(",");
+      // 使用Ajax向服务器发起请求，并使用解构语法获取服务器响应的结果
+      const { data: res } = await this.$http.post(`roles/${this.roleID}/rights`, { rids: keys });
+      // 如果服务器响应的状态码不为200，则角色授权失败
+      if (res.meta.status !== 200) return this.$message.error("权限分配失败：" + res.meta.msg);
+      // 否则修改成功,则dialong对话框消失
+      this.dialogBoxVisible = false;
+      // 更新角色列表
+      this.getRoleList();
+      // 并给予用户提示信息
+      this.$message.success(res.meta.msg);
+    },
+    // 【获取每个角色已有权限的id】事件处理函数
+    getDefaultKeys (node, arr) {
+      // 如果节点不包含children属性,那么就证明递归结束了，将递归的id全部添加到数组中
+      if (!node.children) return arr.push(node.id);
+      // 如果包含就继续递归子节点
+      node.children.forEach(item => this.getDefaultKeys(item, arr));
     }
   }
 }

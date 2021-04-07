@@ -3,7 +3,7 @@ import 'element-ui/lib/theme-chalk/index.css'
 import { Form, FormItem, Input, Button, Message } from 'element-ui';
 import { Container, Header, Aside, Main, Menu, Submenu, MenuItem, MenuItemGroup } from 'element-ui';
 import { Breadcrumb, BreadcrumbItem, Card, Row, Col, Table, TableColumn, Switch, ButtonGroup, Tooltip, Pagination, Dialog, MessageBox } from 'element-ui';
-import { Tag } from 'element-ui';
+import { Tag, Tree } from 'element-ui';
 // 在Vue对象的原型中设置一个属性为Message,这样就有利于后期的使用
 Vue.prototype.$message = Message;
 Vue.prototype.$confirm = MessageBox.confirm;
@@ -33,3 +33,4 @@ Vue.use(Tooltip);
 Vue.use(Pagination);
 Vue.use(Dialog);
 Vue.use(Tag);
+Vue.use(Tree);
