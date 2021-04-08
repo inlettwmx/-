@@ -85,7 +85,8 @@
                           placement="top-start"
                           :enterable="false">
                 <el-button type="warning"
-                           icon="el-icon-setting"></el-button>
+                           icon="el-icon-setting"
+                           @click="roleDialongOpen(scope.row)"></el-button>
               </el-tooltip>
             </el-button-group>
           </template>
@@ -187,6 +188,33 @@
         </span>
       </template>
     </el-dialog>
+    <!-- 分配角色功能实现 -->
+    <el-dialog title="分配角色"
+               width="30%"
+               @close="dialogRoleClose"
+               :visible.sync="dialogRoleVisible">
+      <div>
+        <p>用户名：{{seletUser.username}}</p>
+        <p>当前角色：{{seletUser.role_name}}</p>
+        <p>更换角色：
+          <el-select v-model="seletRoleid"
+                     placeholder="请选择">
+            <el-option v-for="item in roleList"
+                       :key="item.id"
+                       :label=" item.roleName"
+                       :value="item.id">
+            </el-option>
+          </el-select>
+        </p>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogRoleClose">取 消</el-button>
+          <el-button type="primary"
+                     @click="updataUserRole">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -231,6 +259,8 @@ export default {
       dialogFormVisible: false,
       // 是否显示修改用户信息的dialog对话框
       dialogAmendVisible: false,
+      // 是否显示角色分配的dialog对话框
+      dialogRoleVisible: false,
       // 添加用户的数据
       form: {
         username: "",
@@ -274,7 +304,13 @@ export default {
           { required: true, message: '请输入用户手机号', trigger: 'blur' },
           { validator: checkMobile, trigger: 'blur' }
         ]
-      }
+      },
+      // 当前选中的分配角色的对象
+      seletUser: { id: null, username: "", role_name: "" },
+      // 角色列表
+      roleList: [],
+      //选中的角色id值
+      seletRoleid: null
     }
   },
   // Vue实例创建完成后立即执行的钩子函数
@@ -410,6 +446,43 @@ export default {
         // 修改成功后的提示
         this.$message.success(res.meta.msg);
       })
+    },
+    // 角色分配dialog对话框打开的事件处理函数
+    async roleDialongOpen (scope) {
+      // 给对象赋值：当前这一行的用户名和角色名称
+      this.seletUser = { id: scope.id, username: scope.username, role_name: scope.role_name };
+      // 通过Ajax向服务器发起请求来获取角色列表,并通过解构语法将其数据拿出来
+      const { data: res } = await this.$http.get("roles");
+      // 如果服务器响应的状态码不为200，则获取失败，那么就结束并提示
+      if (res.meta.status !== 200) return this.$message.error("角色列表获取失败：" + res.meta.msg);
+      // 否则获取成功，将数据记录到roleList属性中
+      this.roleList = res.data;
+      // 最后打开对话框
+      this.dialogRoleVisible = true;
+    },
+    // [分配角色对话框点击确定后]事件处理函数
+    async updataUserRole () {
+      // 如果没有选择,则提示
+      if (!this.seletRoleid) return this.$message.error("请选择要分配的角色");
+      // 向服务器发起Ajax请求,根据用户id和角色id去修改数据,并获取服务器响应的结果
+      const { data: res } = await this.$http.put(`users/${this.seletUser.id}/role`, { rid: this.seletRoleid });
+      // 如果服务器响应的状态码不为200,则分配角色失败,提示信息
+      if (res.meta.status !== 200) return this.$message.error("角色分配失败:：" + res.meta.msg);
+      // 调用角色分配dialog对话框关闭的事件处理函数
+      this.dialogRoleClose();
+      // 重新获取用户数据
+      this.getUserList();
+      // 提示用户角色分配成功
+      this.$message.success(res.meta.msg);
+    },
+    // [角色分配dialog对话框关闭]的事件处理函数
+    dialogRoleClose () {
+      // 初始化当前选中的分配角色的对象
+      this.seletUser = { id: null, username: "", role_name: "" };
+      // 初始化角色id属性
+      this.seletRoleid = null;
+      // 关闭对话框
+      this.dialogRoleVisible = false;
     }
   }
 }

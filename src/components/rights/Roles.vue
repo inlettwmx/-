@@ -9,7 +9,8 @@
 
     <el-card>
       <el-row class="add">
-        <el-button type="primary">添加角色</el-button>
+        <el-button type="primary"
+                   @click="dialogAddVisible=true">添加角色</el-button>
       </el-row>
       <!-- 表格展示角色列表 -->
       <el-table :data="roleList"
@@ -73,7 +74,8 @@
                         placement="top-start">
               <el-button size="mini"
                          type="primary"
-                         icon="el-icon-edit"></el-button>
+                         icon="el-icon-edit"
+                         @click="dialogEditOpen(scope.row)"></el-button>
             </el-tooltip>
             <el-tooltip class="item"
                         :enterable="false"
@@ -82,6 +84,7 @@
                         placement="top-start">
               <el-button size="mini"
                          type="danger"
+                         @click="roleDelete(scope.row)"
                          icon="el-icon-delete"></el-button>
             </el-tooltip>
             <el-tooltip class="item"
@@ -99,7 +102,7 @@
       </el-table>
     </el-card>
 
-    <!-- dialog对话框 -->
+    <!-- 分配权限的dialog对话框 -->
     <el-dialog title="分配权限"
                :visible.sync="dialogBoxVisible"
                v-model="dialogBoxVisible"
@@ -123,6 +126,64 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 添加角色的dialog对话框 -->
+    <el-dialog title="添加角色"
+               :visible.sync="dialogAddVisible"
+               v-model="dialogAddVisible"
+               @close="dialogAddClose"
+               width="30%">
+      <el-form :model="fromByaddRoleBy"
+               :rules="roleRules"
+               ref="ruleFormByAdd">
+        <el-form-item label="角色名称"
+                      prop="roleName">
+          <el-input v-model="fromByaddRoleBy.roleName"
+                    autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="角色描述">
+          <el-input v-model="fromByaddRoleBy.roleDesc"
+                    type="textarea"
+                    autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogAddClose">取 消</el-button>
+          <el-button type="primary"
+                     @click="handleAddRole">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 编辑角色的dialog对话框 -->
+    <el-dialog title="编辑角色信息"
+               :visible.sync="dialogEditVisible"
+               v-model="dialogEditVisible"
+               @close="dialogEditClose"
+               width="30%">
+      <el-form :model="fromByaddRoleBy"
+               :rules="roleRules"
+               ref="ruleFormByEdit">
+        <el-form-item label="角色名称"
+                      prop="roleName">
+          <el-input v-model="fromByaddRoleBy.roleName"
+                    autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="角色描述">
+          <el-input v-model="fromByaddRoleBy.roleDesc"
+                    type="textarea"
+                    autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogEditClose">取 消</el-button>
+          <el-button type="primary"
+                     @click="handleEditRole">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -137,6 +198,10 @@ export default {
       rightList: [],
       // dialog对话框是否出现的属性 
       dialogBoxVisible: false,
+      // 添加角色的dialog对话框是否出现的属性
+      dialogAddVisible: false,
+      // 编辑角色的dialog对话框是否出现的属性
+      dialogEditVisible: false,
       // 树形结构展示的默认属性
       defaultProps: {
         children: 'children',
@@ -145,7 +210,19 @@ export default {
       // 树形结构默认被选中的key数组
       defaultKeys: [],
       // 每一次操作的角色id
-      roleID: null
+      roleID: null,
+      // 添加用户的表单数据
+      fromByaddRoleBy: {
+        roleName: '',
+        roleDesc: ''
+      },
+      // 角色表单认证
+      roleRules: {
+        roleName: [
+          { required: true, message: '请输入用户名称', trigger: 'blur' },
+          { min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur' }
+        ]
+      }
     }
   },
   // 实例创建完之后立即调用的钩子函数
@@ -218,7 +295,88 @@ export default {
       if (!node.children) return arr.push(node.id);
       // 如果包含就继续递归子节点
       node.children.forEach(item => this.getDefaultKeys(item, arr));
+    },
+    // [添加角色Dialog对话框关闭]的事件处理函数
+    dialogAddClose () {
+      // 重置表单数据
+      this.$refs.ruleFormByAdd.resetFields()
+      this.dialogAddVisible = false;
+    },
+    // [添加角色]的事件处理函数
+    handleAddRole () {
+      // 进行表单验证
+      this.$refs.ruleFormByAdd.validate(async valid => {
+        // 如果不符合规则,那么就结束
+        if (!valid) return;
+        // 表单验证通过之后,向服务器发起Ajax请求,并接收服务器响应的结果
+        const { data: res } = await this.$http.post("roles", this.fromByaddRoleBy);
+        console.log(res.meta.status);
+        // 如果服务器响应的状态码不为200,则提示
+        if (res.meta.status !== 201) return this.$message.error("添加角色失败:" + res.meta.msg);
+        // 调用 [添加角色Dialog对话框关闭]的事件处理函数
+        this.dialogAddClose();
+        // 提示用户添加角色成功
+        this.$message.success(res.meta.msg);
+      })
+    },
+    // [删除角色]的事件处理函数
+    async roleDelete (scope) {
+      // 给用户弹出提示带取消和确定的按钮
+      const confirmResult = await this.$confirm('此操作将永久删除该角色.是否继续', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).catch(err => err);
+      // 如果不是确定按钮,那么直接结束,并提示用户
+      if (confirmResult !== "confirm") return this.$info("已取消删除");
+      // 否则就向服务器发起Ajax请求,接收服务器响应的结果
+      const { data: res } = await this.$http.delete("roles/" + scope.id);
+      // 如果服务器响应状态不为200，则失败
+      if (res.meta.status !== 200) return this.$message.error("删除角色失败:" + res.meta.msg);
+      // 否则删除角色成功,重新获取角色数据
+      this.getRoleList();
+      // 提示成功
+      this.$message.success(res.meta.msg);
+    },
+    // [编辑角色的dialog对话框打开]的事件处理函数
+    dialogEditOpen (scope) {
+      // 拿到scope中对应的角色名称和角色描述,并绑定到fromByaddRoleBy属性中
+      this.fromByaddRoleBy = {
+        roleName: scope.roleName,
+        roleDesc: scope.roleDesc
+      };
+      // 拿到当前编辑角色的id
+      this.roleID = scope.id;
+      // 打开编辑角色的dialog对话框
+      this.dialogEditVisible = true;
+    },
+    // [编辑角色]的事件处理函数
+    async handleEditRole () {
+      this.$refs.ruleFormByEdit.validate(async valid => {
+        // 如果不符合规则,那么就结束
+        if (!valid) return;
+        // 向服务器发起Ajax请求,并接收服务器的响应
+        const { data: res } = await this.$http.put(`roles/${this.roleID}`, this.fromByaddRoleBy);
+        // 如果服务器响应的状态码不为200,则结束，并提示用户
+        if (res.meta.status !== 200) return this.$message.error("编辑角色信息失败:" + res.meta.msg);
+        // 否则编辑成功,那么调用getRoleList函数重新获取角色数据
+        this.getRoleList();
+        // 调用编辑角色对话框关闭的事件处理函数
+        this.dialogEditClose();
+        // 最后提示用户编辑成功
+        this.$message.success(res.meta.msg);
+      })
+    },
+    // [编辑角色对话框关闭]的事件处理函数
+    dialogEditClose () {
+      // 初始化数据
+      this.fromByaddRoleBy = { roleName: '', roleDesc: '' };
+      // 清空id
+      this.roleID = null;
+      // 关闭对话框
+      this.dialogEditVisible = false;
     }
+
   }
 }
 </script>
