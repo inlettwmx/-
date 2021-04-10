@@ -4,8 +4,9 @@ import Login from '../components/Login.vue';
 import Home from '../components/Home.vue';
 import Welcome from '../components/Welcome.vue';
 import Users from '../components/Users/Users.vue';
-import Roles from '../components/rights/Roles.vue';
-import Rights from '../components/rights/Rights.vue';
+import Roles from '../components/Rights/Roles.vue';
+import Rights from '../components/Rights/Rights.vue';
+import Categories from '../components/Goods/Categories.vue';
 
 Vue.use(VueRouter);
 
@@ -46,6 +47,9 @@ const router = new VueRouter({
                 {
                     path: "/home/rights",
                     component: Rights
+                }, {
+                    path: '/home/categories',
+                    component: Categories
                 }
             ]
         }

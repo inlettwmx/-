@@ -60,6 +60,16 @@ export default {
       }
     }
   },
+  // 实例创建完成时调用的钩子函数
+  created () {
+    // 给文档对象添加键盘弹起的事件，并将事件对象传递
+    document.addEventListener("keyup", this.keyBoardEvent, this);
+  },
+  // 实例销毁时调用的钩子函数
+  destroyed () {
+    // 解绑文档对象的keyup事件对应的this.keyBoardEvent函数
+    document.removeEventListener("keyup", this.keyBoardEvent, this);
+  },
   methods: {
     // 登录的事件
     login () {
@@ -82,6 +92,14 @@ export default {
     // 重置的事件
     reset () {
       this.$refs.LoginFormRef.resetFields();
+    },
+    // 键盘事件，回车登录
+    keyBoardEvent (e) {
+      // 如果按下的是回车
+      if (e.keyCode == "13") {
+        // 调用登录的事件处理函数
+        this.login();
+      }
     }
   }
 }

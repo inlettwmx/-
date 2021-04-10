@@ -58,12 +58,10 @@
         <el-table-column type="index"
                          align="center"></el-table-column>
         <el-table-column label="角色名称"
-                         prop="roleName"
-                         width="350px">
+                         prop="roleName">
         </el-table-column>
         <el-table-column label="角色描述"
-                         prop="roleDesc"
-                         width="350px">
+                         prop="roleDesc">
         </el-table-column>
         <el-table-column label="权限管理">
           <template v-slot="scope">
@@ -315,6 +313,8 @@ export default {
         if (res.meta.status !== 201) return this.$message.error("添加角色失败:" + res.meta.msg);
         // 调用 [添加角色Dialog对话框关闭]的事件处理函数
         this.dialogAddClose();
+        // 调用获取角色列表的函数，重新渲染页面
+        this.getRoleList();
         // 提示用户添加角色成功
         this.$message.success(res.meta.msg);
       })
